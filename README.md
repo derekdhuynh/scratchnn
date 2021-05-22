@@ -1,6 +1,6 @@
 # Neural Networks From Top to Bottom
 
-# Purpose
+## Purpose
 To understand neural nets from an intuitive and more rigourous approach.
 End-to-end examples of creating neural nets from varying levels of abstraction.
 * tf.keras (high level)
