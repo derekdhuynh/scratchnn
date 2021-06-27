@@ -26,5 +26,4 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
 
 ### Questions You'll Probably Ask
 1. Why don't I just use Tensorflow/Pytorch/JAX/whatever?
-
-        Yes.
+    Yes.
