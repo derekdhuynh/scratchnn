@@ -8,8 +8,8 @@ It has full, clean implementations of:
 * Autodiff (backprop)
 * Tensors (probably) 
 * High-level Neural Net API including:
-        * MLPs
-        * CNNs
+    * MLPs
+    * CNNs
 * Maybe some traditional ML algorithms
 
 I found that using Tensorflow and Keras wasn't enough to get the concepts of DL
@@ -26,4 +26,5 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
 
 ### Questions You'll Probably Ask
 1. Why don't I just use Tensorflow/Pytorch/JAX/whatever?
+
         Yes.
