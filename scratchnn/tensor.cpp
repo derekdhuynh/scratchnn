@@ -88,22 +88,15 @@ void scratchnn::Tensor<T>::_matmul_2D(const Tensor<T>& B, T* const startP,
 
    Must be invoked on Tensors with dimensions (M, N) and (N, P)
    */
-  // float* prod = new float[B.shape[0] * (this->shape)[1]];
 
   size_t row = B.shape.size() - 2;
   size_t col = B.shape.size() - 1;
 
-  // vector<int> shape = {(this->shape)[row], B.shape[col]};
-
   for (size_t i = 0; i < (this->shape)[row]; i++) {
     for (size_t k = 0; k < B.shape[col]; k++) {
       T prod_ik = T(0);
-      // float* ik = startP + (i * (this->strides)[row] + k * B.strides[col]);
 
       for (size_t j = 0; j < B.shape[row]; j++) {
-        // float a_ij = *(startA + (i * (this->strides)[row] + j * (this->strides)[col]));
-        // float b_jk = *(startB + (j * B.strides[row] + k * B.strides[col]));
-
         T a_ij = startA[i * (this->strides)[row] + j * (this->strides)[col] + offset];
         T b_jk = startB[j * B.strides[row] + k * B.strides[col] + offset];
         prod_ik += a_ij * b_jk;
@@ -116,23 +109,23 @@ void scratchnn::Tensor<T>::_matmul_2D(const Tensor<T>& B, T* const startP,
 template<class T>
 void scratchnn::Tensor<T>::_matmul_3D(const Tensor<T>& B, T* const startP, 
     const unique_ptr<T[]>& startA, const unique_ptr<T[]>& startB, const size_t offset) {
+  /*
+   * Helper for performing a matmul between 4D tensors. 
+   */
   vector<size_t> shape = {B.shape[0], (this->shape)[1], B.shape[2]};
   vector<size_t> strd = Tensor<T>::get_strides(shape);
-  //cout << strd[0] << endl;
 
   for (int d = 0; d < B.shape[0]; d++) {
-    // (this->_matmul_2D)(B, startP + d * strides[0], startA + d * strides[0], 
-    //     startB + d * strides[0]);
     (this->_matmul_2D)(B, startP, startA, startB, offset + d * strd[0]);
   }
-
-  // Tensor product = Tensor(prod, shape);
-  // return product;
 }
 
 template<class T>
 void scratchnn::Tensor<T>::_matmul_4D(const Tensor<T>& B, T* const startP,
     const unique_ptr<T[]>& startA, const unique_ptr<T[]>& startB) {
+  /*
+   * Helper for performing a matmul between 4D tensors. 
+   */
   vector<size_t> shape = {B.shape[0], B.shape[1], (this->shape)[2], B.shape[3]};
   vector<size_t> strd = scratchnn::Tensor<T>::get_strides(shape);
   cout << strd[0] << endl;
@@ -144,6 +137,10 @@ void scratchnn::Tensor<T>::_matmul_4D(const Tensor<T>& B, T* const startP,
 
 template<class T>
 scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
+  /*
+   * Performs a standard matrix multiply between two tensors. Returns a reference to
+   * a newly allocated tensor.
+   */
   size_t total_size = 1;
 
   vector<size_t> shape = vector<size_t>(B.shape.size());

@@ -1,4 +1,4 @@
-#include "tensor.h"
+#include "tensor_shared.h"
 #include <iostream>
 
 using namespace std;
