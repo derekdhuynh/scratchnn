@@ -5,6 +5,7 @@ using namespace std;
 using namespace scratchnn;
 
 int main() {
+  // Testing matmul wit 1 to 4D tensors
   initializer_list<size_t> shp = {3, 3};
   Tensor<float>& arr = full(1.f, shp);
   Tensor<float>& arr2 = full(2.f, shp);
@@ -36,4 +37,8 @@ int main() {
 
   decltype(arr) product3 = arr5.matmul(arr6);
   printt(product3);
+
+  /*
+   * Test ops - addition, subtraction, multiplication, division
+   */
 }

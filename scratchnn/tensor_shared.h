@@ -54,6 +54,20 @@ namespace scratchnn {
         - min
         - a generic u func template that is performed on each element in the array
        */
+      Tensor<T>& operator+=(const Tensor<T>& rhs);
+      Tensor<T> operator+(const Tensor<T>& rhs);
+
+      Tensor<T>& operator-=(const Tensor<T>& rhs);
+      Tensor<T> operator-(const Tensor<T>& rhs);
+
+      Tensor<T>& operator/=(const Tensor<T>& rhs);
+      Tensor<T> operator/(const Tensor<T>& rhs);
+
+      Tensor<T>& operator*=(const Tensor<T>& rhs);
+      Tensor<T> operator*(const Tensor<T>& rhs);
+
+      T max();
+      T min();
   };
 
   template<class T>

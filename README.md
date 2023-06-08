@@ -33,10 +33,10 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
 - [X] Fix matmul code
     - [X] Calculating the shapes at each level
     - [X] Calculating the strides at each level
-- [ ] Overload basic arithmetic operators
-    - [ ] Add support for ufuncs
-- [ ] Views of tensors
-    - [ ] Reshaping
+- [X] Overload basic arithmetic operators
+    - [X] Add support for ufuncs
+- [X] Views of tensors
+    - [X] Reshaping
 - [ ] Look into overloading the assignment operator
 - [ ] Template for sizes? Very annoying to have to make it size_t everytime
     - [ ] Maybe make a wrapper over vector and just cast it to size_t or something

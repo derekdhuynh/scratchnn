@@ -107,9 +107,12 @@ void scratchnn::Tensor<T>::_matmul_2D(const Tensor<T>& B, const shared_ptr<T[]>&
       for (size_t j = 0; j < B.shape[row]; j++) {
         T a_ij = startA[i * (this->strides)[row] + j * (this->strides)[col] + offset];
         T b_jk = startB[j * B.strides[row] + k * B.strides[col] + offset];
+        // T a_ij = startA[i * (this->strides)[row] + j * (this->strides)[col]];
+        // T b_jk = startB[j * B.strides[row] + k * B.strides[col]];
         prod_ik += a_ij * b_jk;
       }
       startP[i * (this->strides)[row] + k * B.strides[col] + offset] = prod_ik;
+      // startP[i * (this->strides)[row] + k * B.strides[col]] = prod_ik;
     }
   }
 }
@@ -149,7 +152,6 @@ void scratchnn::Tensor<T>::_matmul_4D(const Tensor<T>& B, const shared_ptr<T[]>&
   // vector<size_t> strd = scratchnn::Tensor<T>::get_strides(shp);
 
   for (int d = 0; d < shp[0]; d++) {
-    //cout << d * strd[0] << endl;
     (this->_matmul_3D)(B, startP, startA, startB, shp, strd, d * strd[0]);
   }
 }
@@ -161,6 +163,9 @@ scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
    * a newly allocated tensor.
    *
    * Note: The use of make_shared for an array only gained support in C++20
+   *
+   * Strassen's algorithm for tensor contraction - https://arxiv.org/pdf/1704.03092.pdf
+   *
    */
   size_t total_size = 1;
 
@@ -170,21 +175,26 @@ scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
     total_size *= B.shape[i];
   }
 
+  size_t num_mats = total_size;
 
   size_t rows = B.shape[B.shape.size() - 2];
   size_t cols = B.shape[B.shape.size() - 1];
+  size_t mat_size = rows * cols;
 
   total_size *= rows * cols;
 
   new_shape[B.shape.size() - 2] = rows;
   new_shape[B.shape.size() - 1] = cols;
 
-  for (auto &i: new_shape) {
-  }
   vector<size_t> new_strides = Tensor::get_strides(new_shape);
 
   const shared_ptr<T[]> prod = make_shared<T[]>(total_size);
 
+  for (int i = 0; i < num_mats; i++) {
+    _matmul_2D(B, prod, this->data, B.data, i * mat_size);
+  }
+
+  /*
   if (B.shape.size() == 2) {
     _matmul_2D(B, prod, this->data, B.data, 0);
   } else if (B.shape.size() == 3) {
@@ -194,6 +204,7 @@ scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
   } else {
     throw runtime_error("Dimensions don't match.");
   }
+  */
 
   Tensor<T>* product = new Tensor(prod, new_shape, total_size);
   return *product;
@@ -231,4 +242,109 @@ void scratchnn::Tensor<T>::reshape(C shp) {
 
   shape = new_shape;
   strides = get_strides(shape);
+}
+
+template<class T>
+scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator+=(const Tensor<T>& rhs) {
+  for (size_t i = 0; i < size; i++) {
+    data[i] += rhs[i];
+  }
+  return *this;
+}
+
+template<class T>
+scratchnn::Tensor<T> scratchnn::Tensor<T>::operator+(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+  Tensor<T>* res = full<T>(T(0), shape);
+
+  for (size_t i = 0; i < size; i++) {
+    res[i] = data[i] + rhs[i];
+  }
+  return *res;
+}
+
+template<class T>
+scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator-=(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  for (size_t i = 0; i < size; i++) {
+    data[i] -= rhs[i];
+  }
+  return *this;
+}
+
+template<class T>
+scratchnn::Tensor<T> scratchnn::Tensor<T>::operator-(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  Tensor<T>* res = full<T>(T(0), shape);
+
+  for (size_t i = 0; i < size; i++) {
+    res[i] = data[i] - rhs[i];
+  }
+  return *res;
+}
+
+template<class T>
+scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator/=(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  for (size_t i = 0; i < size; i++) {
+    data[i] /= rhs[i];
+  }
+  return *this;
+}
+
+template<class T>
+scratchnn::Tensor<T> scratchnn::Tensor<T>::operator/(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  Tensor<T>* res = full<T>(T(0), shape);
+
+  for (size_t i = 0; i < size; i++) {
+    res[i] = data[i] / rhs[i];
+  }
+  return *res;
+}
+
+template<class T>
+scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator*=(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  for (size_t i = 0; i < size; i++) {
+    data[i] *= rhs[i];
+  }
+  return *this;
+}
+
+template<class T>
+scratchnn::Tensor<T> scratchnn::Tensor<T>::operator*(const Tensor<T>& rhs) {
+  assert(size == rhs.size);
+
+  Tensor<T> res = full<T>(T(0), shape);
+
+  for (size_t i = 0; i < size; i++) {
+    res[i] = data[i] * rhs[i];
+  }
+  return *res;
+}
+
+template<class T>
+T scratchnn::Tensor<T>::max() {
+  T mx = T(data[0]);
+
+  for (int i = 0; i < size; i++) {
+    mx = (data[i] > mx) ? data[i] : mx;
+  }
+  return mx;
+}
+
+template<class T>
+T scratchnn::Tensor<T>::min() {
+  T mn = T(data[0]);
+
+  for (int i = 0; i < size; i++) {
+    mn = (data[i] < mn) ? data[i] : mn;
+  }
+  return mn;
 }
