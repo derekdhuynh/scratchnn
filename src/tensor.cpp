@@ -1,50 +1,48 @@
-#include <cassert>
 #include <iostream>
-#include <vector>
 #include <stdexcept>
 #include <memory>
+#include "tensor.h"
 
-//using namespace scratchnn;
-using namespace std;
+namespace scratchnn {
 
 template<class T>
-scratchnn::Tensor<T>::Tensor(T* const arr, const vector<size_t>& shp, const size_t sz) {
+Tensor<T>::Tensor(T* const arr, const std::vector<size_t>& shp, const size_t sz) {
   /*
    Strides - https://numpy.org/devdocs/reference/generated/numpy.ndarray.strides.html
    Numpy ndarrays Paper - https://arxiv.org/pdf/1102.1523.pdf
    */
-  data = shared_ptr<T[]>(arr);
+  data = std::shared_ptr<T[]>(arr);
   shape = shp;
   size = sz;
-  strides = (this->get_strides)(shape);
+  strides = get_strides(shape);
 }
 
 template<class T>
-scratchnn::Tensor<T>::Tensor(const shared_ptr<T[]>& ptr, const vector<size_t>& shp, const size_t sz) {
+Tensor<T>::Tensor(const std::shared_ptr<T[]>& ptr, const std::vector<size_t>& shp, const size_t sz) {
   data = ptr;
   shape = shp;
   size = sz;
-  strides = (this->get_strides)(shape);
+  strides = get_strides(shape);
 }
 
-template<class T>
-scratchnn::Tensor<T>& scratchnn::full(T val, initializer_list<size_t>& shape) {
+template<class T, class Container>
+Tensor<T>& full(T val, const Container& shape) {
   /*
    Initialize a tensor with shape full of val. Returns the Tensor object itself.
    */
   size_t size = 1;
-  vector<size_t> shp = shape;
+  std::vector<size_t> shp(shape.size(), 0);
 
+  // Copying into the shp
   for (const auto& s: shape) {
     size *= s;
   }
+  std::transform(shape.begin(), shape.end(), shp.begin(),
+      [](auto shape_entry) {static_cast<size_t>(shape_entry);});
 
   // Creating a contiguous C-style array
-  T* const arr = new T[size];
-
-  for (size_t i = 0; i < size; i++) {
-    arr[i] = val;
-  }
+  const auto arr = std::make_shared<T[]>(size);
+  std::fill_n(arr, arr + size, val);
 
   Tensor<T>* tens = new Tensor(arr, shp, size);
   return *tens;
@@ -52,8 +50,8 @@ scratchnn::Tensor<T>& scratchnn::full(T val, initializer_list<size_t>& shape) {
 
 
 template<class T>
-vector<size_t> scratchnn::Tensor<T>::get_strides(const vector<size_t>& shp) {
-  vector<size_t> strd = vector<size_t>(shp.size());
+std::vector<size_t> Tensor<T>::get_strides(const std::vector<size_t>& shp) {
+  std::vector<size_t> strd = std::vector<size_t>(shp.size());
   size_t offset = 1;
 
   // Look into this, if loop variable is size_t the unsigned ll underflows
@@ -65,30 +63,30 @@ vector<size_t> scratchnn::Tensor<T>::get_strides(const vector<size_t>& shp) {
 }
 
 template<class T>
-void scratchnn::printt(Tensor<T>& tensor) {
-  cout << "[";
+void printt(const Tensor<T>& tensor) {
+  std::cout << "[";
   for (size_t i = 0; i < tensor.size; i++) {
-    cout << tensor.data[i] << ", ";
+    std::cout << tensor.data[i] << ", ";
   }
-  cout << "\b\b";
-  cout << "]";
-  cout << endl;
+  std::cout << "\b\b";
+  std::cout << "]";
+  std::cout << std::endl;
 }
 
 template<class T>
-T scratchnn::Tensor<T>::get(vector<size_t> inds) {
+T Tensor<T>::get(const std::vector<size_t>& inds) {
   int ind = 0;
 
-  for (size_t i = 0; i < (this->strides).size(); i++) {
-    ind += inds[i] * this->strides[i];
+  for (size_t i = 0; i < strides.size(); i++) {
+    ind += inds[i] * strides[i];
   }
 
-  return *(this->data + ind);
+  return *(data + ind);
 }
 
 template<class T>
-void scratchnn::Tensor<T>::_matmul_2D(const Tensor<T>& B, const shared_ptr<T[]>& startP, 
-    const shared_ptr<T[]>& startA, const shared_ptr<T[]>& startB, const size_t offset) {
+void Tensor<T>::_matmul_2D(const Tensor<T>& B, const std::shared_ptr<T[]>& startP, 
+    const std::shared_ptr<T[]>& startA, const std::shared_ptr<T[]>& startB, const size_t offset) {
   /*
    i - # of rows of this
    j - # of cols of this/ # of rows of B
@@ -107,25 +105,20 @@ void scratchnn::Tensor<T>::_matmul_2D(const Tensor<T>& B, const shared_ptr<T[]>&
       for (size_t j = 0; j < B.shape[row]; j++) {
         T a_ij = startA[i * (this->strides)[row] + j * (this->strides)[col] + offset];
         T b_jk = startB[j * B.strides[row] + k * B.strides[col] + offset];
-        // T a_ij = startA[i * (this->strides)[row] + j * (this->strides)[col]];
-        // T b_jk = startB[j * B.strides[row] + k * B.strides[col]];
         prod_ik += a_ij * b_jk;
       }
       startP[i * (this->strides)[row] + k * B.strides[col] + offset] = prod_ik;
-      // startP[i * (this->strides)[row] + k * B.strides[col]] = prod_ik;
     }
   }
 }
 
 template<class T>
-void scratchnn::Tensor<T>::_matmul_3D(const Tensor<T>& B, const shared_ptr<T[]>& startP, 
+void Tensor<T>::_matmul_3D(const Tensor<T>& B, const shared_ptr<T[]>& startP, 
     const shared_ptr<T[]>& startA, const shared_ptr<T[]>& startB, 
     const vector<size_t>& shp, const std::vector<size_t>& strd, const size_t offset) {
   /*
    * Helper for performing a matmul between 3D tensors. 
    */
-  //vector<size_t> shp = {B.shape[0], (this->shape)[1], B.shape[2]};
-  //vector<size_t> strd = Tensor<T>::get_strides(shp);
   size_t off;
   size_t dim;
   if (B.shape.size() == 4) {
@@ -142,22 +135,19 @@ void scratchnn::Tensor<T>::_matmul_3D(const Tensor<T>& B, const shared_ptr<T[]>&
 }
 
 template<class T>
-void scratchnn::Tensor<T>::_matmul_4D(const Tensor<T>& B, const shared_ptr<T[]>& startP,
+void Tensor<T>::_matmul_4D(const Tensor<T>& B, const shared_ptr<T[]>& startP,
     const shared_ptr<T[]>& startA, const shared_ptr<T[]>& startB,
     const vector<size_t>& shp, const vector<size_t>& strd) {
   /*
    * Helper for performing a matmul between 4D tensors. 
    */
-  // vector<size_t> shp = {B.shape[0], B.shape[1], (this->shape)[2], B.shape[3]};
-  // vector<size_t> strd = scratchnn::Tensor<T>::get_strides(shp);
-
   for (int d = 0; d < shp[0]; d++) {
     (this->_matmul_3D)(B, startP, startA, startB, shp, strd, d * strd[0]);
   }
 }
 
 template<class T>
-scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
+Tensor<T>& Tensor<T>::matmul(const Tensor<T>& B) {
   /*
    * Performs a standard matrix multiply between two tensors. Returns a reference to
    * a newly allocated tensor.
@@ -169,7 +159,7 @@ scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
    */
   size_t total_size = 1;
 
-  vector<size_t> new_shape = vector<size_t>(B.shape.size());
+  std::vector<size_t> new_shape = std::vector<size_t>(B.shape.size());
   for (int i = 0; i < B.shape.size() - 2; i++) {
     new_shape[i] = B.shape[i];
     total_size *= B.shape[i];
@@ -186,39 +176,26 @@ scratchnn::Tensor<T>& scratchnn::Tensor<T>::matmul(const Tensor<T>& B) {
   new_shape[B.shape.size() - 2] = rows;
   new_shape[B.shape.size() - 1] = cols;
 
-  vector<size_t> new_strides = Tensor::get_strides(new_shape);
+  std::vector<size_t> new_strides = Tensor::get_strides(new_shape);
 
-  const shared_ptr<T[]> prod = make_shared<T[]>(total_size);
+  const std::shared_ptr<T[]> prod = std::make_shared<T[]>(total_size);
 
   for (int i = 0; i < num_mats; i++) {
     _matmul_2D(B, prod, this->data, B.data, i * mat_size);
   }
 
-  /*
-  if (B.shape.size() == 2) {
-    _matmul_2D(B, prod, this->data, B.data, 0);
-  } else if (B.shape.size() == 3) {
-    _matmul_3D(B, prod, this->data, B.data, new_shape, new_strides, 0);
-  } else if (B.shape.size() == 4) {
-    _matmul_4D(B, prod, this->data, B.data, new_shape, new_strides);
-  } else {
-    throw runtime_error("Dimensions don't match.");
-  }
-  */
-
   Tensor<T>* product = new Tensor(prod, new_shape, total_size);
   return *product;
 }
 
-template<class T>
 template<class C>
-void scratchnn::Tensor<T>::reshape(C shp) {
+void Tensor<T>::reshape(C shp) {
   /*
    * Numpy-like reshaping method. Add support for the -1 syntax, infer the shape
    * based on the rest of the entries
    */
   size_t new_size = 0;
-  vector<size_t> new_shape = vector<size_t>(shp.size());
+  std::vector<size_t> new_shape = std::vector<size_t>(shp.size());
 
   int infer = -1;
   int ind = 0;
@@ -238,100 +215,107 @@ void scratchnn::Tensor<T>::reshape(C shp) {
   }
 
   // Make sure the new shape is valid
-  assert(new_size == size);
+  //assert(new_size == size);
 
   shape = new_shape;
   strides = get_strides(shape);
 }
 
+
+/*
+ * Overloaded arithmetic operators. Future work would implement broadcasting here
+ * but frankly that seems unnecessary at this point.
+ */
 template<class T>
-scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator+=(const Tensor<T>& rhs) {
+Tensor<T>& Tensor<T>::operator+=(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
+
   for (size_t i = 0; i < size; i++) {
-    data[i] += rhs[i];
+    data[i] += rhs.data[i];
   }
   return *this;
 }
 
 template<class T>
-scratchnn::Tensor<T> scratchnn::Tensor<T>::operator+(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
-  Tensor<T>* res = full<T>(T(0), shape);
+Tensor<T> Tensor<T>::operator+(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
+  Tensor<T>& res = full<T>(T(0), shape);
 
   for (size_t i = 0; i < size; i++) {
-    res[i] = data[i] + rhs[i];
+    res.data[i] = data[i] + rhs.data[i];
   }
-  return *res;
+  return res;
 }
 
 template<class T>
-scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator-=(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T>& Tensor<T>::operator-=(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
   for (size_t i = 0; i < size; i++) {
     data[i] -= rhs[i];
   }
-  return *this;
+  return this;
 }
 
 template<class T>
-scratchnn::Tensor<T> scratchnn::Tensor<T>::operator-(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T> Tensor<T>::operator-(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
-  Tensor<T>* res = full<T>(T(0), shape);
+  Tensor<T>& res = full<T>(T(0), shape);
 
   for (size_t i = 0; i < size; i++) {
-    res[i] = data[i] - rhs[i];
+    res.data[i] = data[i] - rhs.data[i];
   }
   return *res;
 }
 
 template<class T>
-scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator/=(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T>& Tensor<T>::operator/=(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
   for (size_t i = 0; i < size; i++) {
-    data[i] /= rhs[i];
+    data[i] /= rhs.data[i];
   }
   return *this;
 }
 
 template<class T>
-scratchnn::Tensor<T> scratchnn::Tensor<T>::operator/(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T> Tensor<T>::operator/(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
-  Tensor<T>* res = full<T>(T(0), shape);
+  Tensor<T>& res = full<T>(T(0), shape);
 
   for (size_t i = 0; i < size; i++) {
-    res[i] = data[i] / rhs[i];
+    res.data[i] = data[i] / rhs.data[i];
   }
-  return *res;
+  return res;
 }
 
 template<class T>
-scratchnn::Tensor<T>& scratchnn::Tensor<T>::operator*=(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T>& Tensor<T>::operator*=(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
   for (size_t i = 0; i < size; i++) {
-    data[i] *= rhs[i];
+    data[i] *= rhs.data[i];
   }
   return *this;
 }
 
 template<class T>
-scratchnn::Tensor<T> scratchnn::Tensor<T>::operator*(const Tensor<T>& rhs) {
-  assert(size == rhs.size);
+Tensor<T> Tensor<T>::operator*(const Tensor<T>& rhs) {
+  //assert(size == rhs.size);
 
-  Tensor<T> res = full<T>(T(0), shape);
+  Tensor<T>& res = full<T>(T(0), shape);
 
   for (size_t i = 0; i < size; i++) {
-    res[i] = data[i] * rhs[i];
+    res.data[i] = data[i] * rhs.data[i];
   }
-  return *res;
+  return res;
 }
 
 template<class T>
-T scratchnn::Tensor<T>::max() {
-  T mx = T(data[0]);
+T Tensor<T>::max() {
+  T mx = data[0];
 
   for (int i = 0; i < size; i++) {
     mx = (data[i] > mx) ? data[i] : mx;
@@ -340,11 +324,12 @@ T scratchnn::Tensor<T>::max() {
 }
 
 template<class T>
-T scratchnn::Tensor<T>::min() {
-  T mn = T(data[0]);
+T Tensor<T>::min() {
+  T mn = data[0];
 
   for (int i = 0; i < size; i++) {
     mn = (data[i] < mn) ? data[i] : mn;
   }
   return mn;
 }
+} // namespace scratchnn

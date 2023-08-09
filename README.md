@@ -2,7 +2,7 @@
 
 ### Purpose
 scratchnn is a DL framework written in C++ that tries to simplify things as much as possible,
-while also trying to keep performance in mind.
+while also trying its best to be mildly performant.
 
 It has full implementations of:
 
@@ -10,21 +10,23 @@ It has full implementations of:
 * Tensors
 * High-level Neural Net API including:
     * Dense layers
+    * Attention layers (for transformers)
     * Convolutional layers
     * Arithmetic layers (i.e add)
     * Concatentation layers
 * Gradient-based optimization methods
+* Data parallelism
 * Traditional ML algorithms (i.e SVMs)
 
 I found that using Tensorflow and Keras wasn't enough to get the concepts of DL
 into my thick skull, so I decided to try and make a DL framework myself. The
 main goals are to educate myself and also provide a useful resource for
-other people in who share my position. I encourage you to follow along in the
+other people who share my position. I encourage you to follow along in the
 ```
 ./notebooks
 ```
 directory for explanations, extra resources and to implement everything
-here yourself! 
+here yourself! Or simply read the C++ code.
 
 IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygrad](https://github.com/geohot/tinygrad)
 
@@ -37,8 +39,8 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
     - [X] Add support for ufuncs
 - [X] Views of tensors
     - [X] Reshaping
-- [ ] Look into overloading the assignment operator
-- [ ] Template for sizes? Very annoying to have to make it size_t everytime
+- [X] Look into overloading the assignment operator
+- [ ] Template for sizes? Very annoying to have to make it size_t everytime (backlog this)
     - [ ] Maybe make a wrapper over vector and just cast it to size_t or something
 - [ ] Basic activation functions
 - [ ] Autograd engine + integrate grad functions with tensors
@@ -48,11 +50,10 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
 - [ ] Optimizers
     - [ ] SGD
     - [ ] Adam
-    - [ ] RMSProp
-- [ ] Convolutional layers
-- [ ] RNNs
-- [ ] VAEs
 - [ ] Transformers
+- [ ] Convolutional layers
+- [ ] VAEs
+- [ ] RNNs
 - [ ] Logistic Regression
 - [ ] Linear Regression
 - [ ] SVM

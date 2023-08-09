@@ -37,10 +37,5 @@
 ehthumbs.db
 Thumbs.db
 
-# Python Specific Files #
-#########################
-*.pyc
-*.pyo
-*.swp
-__pycache__/
-*/.ipynb_checkpoints/
+# Build artifacts
+build/
