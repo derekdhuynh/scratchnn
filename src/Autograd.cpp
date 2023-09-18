@@ -1,8 +1,7 @@
-#include "Autograd.h"
+/*
+#include "Autograd.hpp"
 
 namespace scratchnn {
 
-// Create the global execution engine
-static auto runtime_engine = std::make_shared<ExecutionEngine>();
-
 } // namespace scratchnn
+*/

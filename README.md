@@ -39,6 +39,8 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
     - [X] Add support for ufuncs
 - [X] Views of tensors
     - [X] Reshaping
+    - [ ] Shape permuting (like torch), use variadic template
+    - 
 - [X] Look into overloading the assignment operator
 - [ ] Template for sizes? Very annoying to have to make it size_t everytime (backlog this)
     - [ ] Maybe make a wrapper over vector and just cast it to size_t or something
@@ -54,9 +56,15 @@ IB: [karpathy/micrograd](https://github.com/karpathy/micrograd), [geohot/tinygra
 - [ ] Convolutional layers
 - [ ] VAEs
 - [ ] RNNs
+- [ ] Probabilistic Stuff
 - [ ] Logistic Regression
 - [ ] Linear Regression
 - [ ] SVM
+- [ ] Tensor Optimizations
+    - [ ] Parallel ufuncs for large tensors. Add benchmarks against single threaded
+    - [ ] Multithreaded matmuls
+- [ ] Make RuntimeEngine thread-safe
+- [ ] Network parallelism (computing paths of the graph in parallel, asynchronously)
 
 ### Questions You'll Probably Ask
 1. Why don't I just use Tensorflow/Pytorch/JAX/whatever?
